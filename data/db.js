@@ -1,6 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 
-const db = new sqlite3.Database('./books.db', (err) => {
+const db = new sqlite3.Database('./books-catalogue.db', (err) => {
     if (err) {
         console.error(err.message);
     }
@@ -22,6 +22,20 @@ db.run(`
     console.log('Books table created or already exists.');
 });
 
+db.run(`
+    CREATE TABLE IF NOT EXISTS authors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      biography TEXT,
+      date_of_birth TEXT
+    )
+  `, (err) => {
+    if (err) {
+      console.error(err);
+    } else {
+      console.log('Authors table created successfully.');
+    }
+});
 
 function getAllBooks(){
     db.all('SELECT * FROM books', (err, rows) => {
