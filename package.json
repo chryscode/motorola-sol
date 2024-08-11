@@ -19,6 +19,7 @@
   "homepage": "https://github.com/chryscode/motorola-sol#readme",
   "dependencies": {
     "express": "^4.19.2",
+    "https": "^1.0.0",
     "sqlite3": "^5.1.7"
   }
 }
