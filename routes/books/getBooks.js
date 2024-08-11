@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 
-const db = require('../db')
+const db = require('../../data/db')
 
-router.get('/',  function(req, res, next){
+router.get('/',  (req, res, next) => {
     db.all('SELECT * FROM books', (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });

@@ -23,27 +23,6 @@ db.run(`
 });
 
 
-const bookData = {
-    title: 'The Hitchhiker\'s Guide to the Galaxy',
-    author: 'Douglas Adams'
-};
-
-db.get('SELECT id FROM books WHERE title = ? AND author = ?', [bookData.title, bookData.author], (err, row) => {
-    if (err) {
-        console.error(err.message);
-    } else if (!row) {
-        db.run('INSERT INTO books (title, author) VALUES (?, ?)', [bookData.title, bookData.author], (err) => {
-            if (err) {
-                console.error(err.message);
-            } else {
-                console.log('Book inserted successfully');
-            }
-        });
-    } else {
-        console.log('Book already exists');
-    }
-});
-
 function getAllBooks(){
     db.all('SELECT * FROM books', (err, rows) => {
         if (err) {
