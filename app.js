@@ -17,8 +17,8 @@ const port = process.env.PORT || 3000;
 app.use('/books', getBooksRouter);
 app.use('/books', postBooksRouter);
 
-app.use('/author', getAuthorRouter);
-app.use('/author', postAuthorRouter);
+app.use('/authors', getAuthorRouter);
+app.use('/authors', postAuthorRouter);
 
 app.listen(port, () => {
     console.log("Server Listening on PORT:", port);

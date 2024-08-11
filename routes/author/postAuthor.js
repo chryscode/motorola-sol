@@ -4,7 +4,7 @@ const router = express.Router();
 const db = require('../../data/db')
 
 router.post('/',  (req, res, next) => {
-    const { operation, id, name, biography, date_of_birth } = req.body;
+    const { operation, id, name, birth_date, top_work } = req.body;
     
     if( !operation ){
         return res.status(400).json({ error: 'Need to specify operation INSERT/UPDATE/DELETE' });
@@ -20,7 +20,7 @@ router.post('/',  (req, res, next) => {
                     console.error(err.message);
                     return res.status(400).json({ error: 'Error adding author' });
                 } else if (!row) {
-                    db.run('INSERT INTO authors (name, biography, date_of_birth) VALUES (?, ?, ?)', [name, biography, date_of_birth], (err) => {
+                    db.run('INSERT INTO authors (name, birth_date, top_work) VALUES (?, ?, ?)', [name, birth_date, top_work], (err) => {
                         if (err) {
                             console.error(err.message);
                             return res.status(500).json({ error: 'Error adding author' });
@@ -114,7 +114,7 @@ router.post('/',  (req, res, next) => {
                     return res.status(400).json({ error: 'No such author is available' });
                 }
                 else {
-                    db.run('UPDATE authors SET name = ?, biography = ?, date_of_birth = ? WHERE id = ?', [name, biography, date_of_birth, id], (err) => {
+                    db.run('UPDATE authors SET name = ?, birth_date = ?, top_work = ? WHERE id = ?', [name, birth_date, top_work, id], (err) => {
                         if (err) {
                             console.error(err);
                             return res.status(500).json({ error: 'Error updating author' });

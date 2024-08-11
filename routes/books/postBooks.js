@@ -4,7 +4,7 @@ const router = express.Router();
 const db = require('../../data/db')
 
 router.post('/',  (req, res, next) => {
-    const { operation, id, title, author, published_year } = req.body;
+    const { operation, id, title, author, first_publish_year } = req.body;
     
     if( !operation ){
         return res.status(400).json({ error: 'Need to specify operation INSERT/UPDATE/DELETE' });
@@ -20,7 +20,7 @@ router.post('/',  (req, res, next) => {
                     console.error(err.message);
                     return res.status(400).json({ error: 'Error adding book' });
                 } else if (!row) {
-                    db.run('INSERT INTO books (title, author, published_year) VALUES (?, ?, ?)', [title, author, published_year], (err) => {
+                    db.run('INSERT INTO books (title, author, first_publish_year) VALUES (?, ?, ?)', [title, author, first_publish_year], (err) => {
                         if (err) {
                             console.error(err.message);
                             return res.status(500).json({ error: 'Error adding book' });
@@ -114,7 +114,7 @@ router.post('/',  (req, res, next) => {
                     return res.status(400).json({ error: 'No such book is available' });
                 }
                 else {
-                    db.run('UPDATE books SET title = ?, author = ? WHERE id = ?', [title, author, id], (err) => {
+                    db.run('UPDATE books SET title = ?, author = ?, first_publish_year = ? WHERE id = ?', [title, author, first_publish_year, id], (err) => {
                         if (err) {
                             console.error(err);
                             return res.status(500).json({ error: 'Error updating book' });
