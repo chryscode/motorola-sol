@@ -3,51 +3,40 @@ const sqlite3 = require('sqlite3').verbose();
 
 const db = new sqlite3.Database('./books-catalogue.db', (err) => {
     if (err) {
-        console.error(err.message);
+        console.error('Error on creating the database.', err.message);
     }
     console.log('Connected to the database.');
 });
 
-const authorsSqlCreateStmt = `
-    CREATE TABLE authors (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        birth_year INTEGER,
-        biography TEXT
-    )`;
-
-const booksSqlCreateStmt = `
-    CREATE TABLE books (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        author_id INTEGER NOT NULL,
-        publication_year INTEGER,
-        description TEXT,
-        FOREIGN KEY (author_id) REFERENCES authors(id)
-    )`;
-
-function createTable(tableName, sqlCreateStmt){
-    db.get(`SELECT name FROM sqlite_master WHERE type = "table" AND name = ?`, tableName, (err, row) => {
-        if (err) {
-            console.error(err);
-        } else if (row) {
-            console.log(`${tableName} table already exists.`);
-        } else {
-            console.log(`Creating ${tableName} table...`);
-            db.run(sqlCreateStmt , (err) => {
-                if (err) {
-                    console.error(err);
-                } else {
-                    console.log(`${tableName} table created successfully.`);
-                    if(tableName === "authors") {
-                        addAuthor();
+//Create Table
+async function createTable(tableName, sqlCreateStmt){
+    return new Promise((resolve, reject) => {
+        db.get(`SELECT name FROM sqlite_master WHERE type = "table" AND name = ?`, tableName, (err, row) => {
+            if (err) {
+                console.error('Error on determining if the table exists: ', err);
+                reject(err);
+            } else if (row) {
+                console.log(`${tableName} table already exists.`);
+                resolve();
+            } else {
+                console.log(`Creating ${tableName} table...`);
+                db.run(sqlCreateStmt , (err) => {
+                    if (err) {
+                        console.error('Error on table creation', err);
+                        reject(err);
                     } else {
-                        addBooks();
+                        console.log(`${tableName} table created successfully.`);
+                        if(tableName === "authors") {
+                            addAuthor();
+                        } else {
+                            addBooks();
+                        }
+                        resolve();
                     }
-                }
-            });
-        }
-    });
+                });
+            }
+        });
+    })
 }
 
 //Calling external Library & adding to the authors
@@ -131,11 +120,35 @@ function addBooks(){
     })
 }
 
-//Create tables
-createTable('authors', authorsSqlCreateStmt);
-createTable('books', booksSqlCreateStmt);
+async function dbSetUp(){   
+    const authorsSqlCreateStmt = `
+    CREATE TABLE authors (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        birth_year INTEGER,
+        biography TEXT
+    )`;
 
+    const booksSqlCreateStmt = `
+    CREATE TABLE books (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        author_id INTEGER NOT NULL,
+        publication_year INTEGER,
+        description TEXT,
+        FOREIGN KEY (author_id) REFERENCES authors(id)
+    )`;
+
+    try{
+        await createTable('authors', authorsSqlCreateStmt);
+        await createTable('books', booksSqlCreateStmt);
+    } catch(error){
+        console.log(error);
+    }
+}
+
+dbSetUp();
 
 //Call in the functions to 
-module.exports = db;
+module.exports = db
 
