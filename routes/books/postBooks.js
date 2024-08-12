@@ -4,7 +4,7 @@ const router = express.Router();
 const db = require('../../data/db')
 
 router.post('/',  (req, res, next) => {
-    const { operation, id, title, author, first_publish_year } = req.body;
+    const { operation, id, title, author, publication_year, description } = req.body;
     
     if( !operation ){
         return res.status(400).json({ error: 'Need to specify operation INSERT/UPDATE/DELETE' });
@@ -15,23 +15,34 @@ router.post('/',  (req, res, next) => {
             if (!title || !author) {
                 return res.status(400).json({ error: 'Title and author are required' });
             }
-            db.get('SELECT id FROM books WHERE title = ? AND author = ?', [title, author], (err, row) => {
+
+            //Get the author_id from the authors table
+            db.get('SELECT id FROM authors WHERE name = ?', author, (err, row) => {
                 if (err) {
-                    console.error(err.message);
-                    return res.status(400).json({ error: 'Error adding book' });
+                    console.error(err);
                 } else if (!row) {
-                    db.run('INSERT INTO books (title, author, first_publish_year) VALUES (?, ?, ?)', [title, author, first_publish_year], (err) => {
+                    console.error('Author not found');
+                } else {
+                    const author_id = row.id;
+                    db.get('SELECT id FROM books WHERE title = ? AND author_id = ?', [title, author_id], (err, row) => {
                         if (err) {
                             console.error(err.message);
-                            return res.status(500).json({ error: 'Error adding book' });
-                        } else {
-                            res.json({ message: 'Book inserted successfully'});
+                            return res.status(400).json({ error: 'Error adding book' });
+                        } else if (!row) {
+                            db.run('INSERT INTO books (title, author_id, publication_year, description) VALUES (?, ?, ?, ?)', [title, author_id, publication_year, description], (err) => {
+                                if (err) {
+                                    console.error(err);
+                                } else {
+                                    console.log('Book inserted successfully.');
+                                }
+                            });
+                        }else {
+                            res.json({ message: 'Book added successfully' });
                         }
-                    });
-                } else {
-                    res.json({ message: 'Book added successfully' });
+                    });        
                 }
             });
+            
             break;
         case 'DELETE':
             if (id && title && author){
@@ -127,10 +138,6 @@ router.post('/',  (req, res, next) => {
         default:
             return res.status(400).json({ error: 'Incorrect operation specified' });
     }
-    
-    
-
-    
 })
 
 module.exports = router;
