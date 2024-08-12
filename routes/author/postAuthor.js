@@ -34,71 +34,40 @@ router.post('/',  (req, res, next) => {
             });
             break;
         case 'DELETE':
-            if (id && name){
-                //Check if the author is present with all the parameters
-                db.get('SELECT * FROM authors WHERE id = ? AND name = ?', [id, name], (err, row) => {
-                    if(err){
-                        console.error(err.message);
-                        return res.status(400).json({ error: 'Error validating the author' }); 
-                    }
-                    else if (!row){
-                        return res.status(400).json({ error: 'No such author is available' });
-                    }
-                    else {
-                        db.run('DELETE FROM authors WHERE id = ?', id, (err) => {
+            if(!id) {
+                return res.status(400).json({ error: 'Author id is required' });
+            }
+        
+            //Check if the author is present id
+            db.get('SELECT * FROM authors WHERE id = ?', id, (err, row) => {
+                if(err){
+                    console.error(err.message);
+                    return res.status(400).json({ error: 'Error validating the author' }); 
+                }else if (!row){
+                    return res.status(400).json({ error: 'No such author is available' });
+                }else {
+                    db.run('DELETE FROM authors WHERE id = ?', id, (err) => {
+                        if (err) {
+                            console.error(err);
+                            return res.status(500).json({ error: 'Error deleting author' });
+                        }
+                        console.log('Author deleted successfully');
+
+                        //Delete assocaited books to maintain ref integrity
+                        db.run('DELETE FROM books WHERE author_id = ?', id, (err) => {
                             if (err) {
                                 console.error(err);
-                                return res.status(500).json({ error: 'Error deleting author' });
+                                return res.status(500).json({ error: 'Error deleting books' });
                             }
-                            res.json({ message: 'Author deleted successfully' });
+                            console.log('Associated Books deleted successfully');
                         });
-                    }
-                });
-            } else if (id || name){
-                if (id){
-                    //Check if the author is present id
-                    db.get('SELECT * FROM authors WHERE id = ?', id, (err, row) => {
-                        if(err){
-                            console.error(err.message);
-                            return res.status(400).json({ error: 'Error validating the author' }); 
-                        }
-                        else if (!row){
-                            return res.status(400).json({ error: 'No such author is available' });
-                        }
-                        else {
-                            db.run('DELETE FROM authors WHERE id = ?', id, (err) => {
-                                if (err) {
-                                    console.error(err);
-                                    return res.status(500).json({ error: 'Error deleting author' });
-                                }
-                                res.json({ message: 'Author deleted successfully' });
-                            });
-                        }
+
+                        res.json({ message: 'Author & associated books deleted successfully' });
                     });
-                } else {
-                    //Check if the author is present with name 
-                    db.get('SELECT * FROM authors WHERE name = ?', name, (err, row) => {
-                        if(err){
-                            console.error(err.message);
-                            return res.status(400).json({ error: 'Error validating the author' }); 
-                        }
-                        else if (!row){
-                            return res.status(400).json({ error: 'No such author is available' });
-                        }
-                        else {
-                            db.run('DELETE FROM authors WHERE name = ?', name, (err) => {
-                                if (err) {
-                                    console.error(err);
-                                    return res.status(500).json({ error: 'Error deleting author' });
-                                }
-                                res.json({ message: 'Author deleted successfully' });
-                            });
-                        }
-                    });
+
+                    
                 }
-            } else {
-                return res.status(400).json({ error: 'Either id or name are required' });
-            }
+            });
             break;
         case 'UPDATE':
             if( !id ){
