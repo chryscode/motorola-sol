@@ -19,9 +19,9 @@ router.post('/',  (req, res, next) => {
             //Get the author_id from the authors table
             db.get('SELECT id FROM authors WHERE name = ?', author, (err, row) => {
                 if (err) {
-                    console.error(err);
+                    return res.status(400).json({ error: err });
                 } else if (!row) {
-                    console.error('Author not found');
+                    return res.status(400).json({ error:'Author not found' });
                 } else {
                     const author_id = row.id;
                     db.get('SELECT id FROM books WHERE title = ? AND author_id = ?', [title, author_id], (err, row) => {
@@ -31,13 +31,13 @@ router.post('/',  (req, res, next) => {
                         } else if (!row) {
                             db.run('INSERT INTO books (title, author_id, publication_year, description) VALUES (?, ?, ?, ?)', [title, author_id, publication_year, description], (err) => {
                                 if (err) {
-                                    console.error(err);
+                                    return res.status(400).json({ error: err });
                                 } else {
-                                    console.log('Book inserted successfully.');
+                                    return res.json({ message: 'Book inserted successfully.'});
                                 }
                             });
                         }else {
-                            res.json({ message: 'Book added successfully' });
+                            return res.json({ message: 'Book added successfully' });
                         }
                     });        
                 }
