@@ -8,60 +8,47 @@ const db = new sqlite3.Database('./books-catalogue.db', (err) => {
     console.log('Connected to the database.');
 });
 
-//Create the authors table
-db.get('SELECT name FROM sqlite_master WHERE type = "table" AND name = "authors"', (err, row) => {
-    if (err) {
-        console.error(err);
-    } else if (row) {
-        console.log('Authors table already exists.');
-    } else {
-        console.log('Creating authors table...');
-        db.run(`
-            CREATE TABLE authors (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                birth_year INTEGER,
-                biography TEXT
-            )` , (err) => {
-            if (err) {
-                console.error(err);
-            } else {
-                console.log('Authors table created successfully.');
-                
-                //Call the External API and add in data
-                addAuthor();
-            }
-        });
-    }
-});
+const authorsSqlCreateStmt = `
+    CREATE TABLE authors (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        birth_year INTEGER,
+        biography TEXT
+    )`;
 
-//Create the books table
-db.get('SELECT name FROM sqlite_master WHERE type = "table" AND name = "books"', (err, row) => {
-    if (err) {
-        console.error(err);
-    } else if (row) {
-        console.log('Books table already exists.');
-    } else {
-        console.log('Creating books table...');
-        db.run(`
-            CREATE TABLE books (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                author_id INTEGER NOT NULL,
-                publication_year INTEGER,
-                description TEXT
-            )` , (err) => {
-            if (err) {
-                console.error(err);
-            } else {
-                console.log('Books table created successfully.');
-                
-                //Call the External API and add in data
-                addBooks();             
-            }
-        });
-    }
-});
+const booksSqlCreateStmt = `
+    CREATE TABLE books (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        author_id INTEGER NOT NULL,
+        publication_year INTEGER,
+        description TEXT,
+        FOREIGN KEY (author_id) REFERENCES authors(id)
+    )`;
+
+function createTable(tableName, sqlCreateStmt){
+    db.get(`SELECT name FROM sqlite_master WHERE type = "table" AND name = ?`, tableName, (err, row) => {
+        if (err) {
+            console.error(err);
+        } else if (row) {
+            console.log(`${tableName} table already exists.`);
+        } else {
+            console.log(`Creating ${tableName} table...`);
+            db.run(sqlCreateStmt , (err) => {
+                if (err) {
+                    console.error(err);
+                } else {
+                    console.log(`${tableName} table created successfully.`);
+                    if(tableName === "authors") {
+                        addAuthor();
+                    } else {
+                        addBooks();
+                    }
+                }
+            });
+        }
+    });
+}
 
 //Calling external Library & adding to the authors
 function addAuthor(){
@@ -144,5 +131,11 @@ function addBooks(){
     })
 }
 
+//Create tables
+createTable('authors', authorsSqlCreateStmt);
+createTable('books', booksSqlCreateStmt);
+
+
+//Call in the functions to 
 module.exports = db;
 
