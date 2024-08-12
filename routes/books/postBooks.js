@@ -45,72 +45,26 @@ router.post('/',  (req, res, next) => {
             
             break;
         case 'DELETE':
-            if (id && title && author){
-                //Check if the book is present with all the parameters
-                db.get('SELECT * FROM books b INNER JOIN authors a ON b.author_id = a.id WHERE b.id = ? AND b.title = ? AND a.name = ?', [id, title, author], (err, row) => {
-                    if(err){
-                        console.error(err.message);
-                        return res.status(400).json({ error: 'Error validating the book' }); 
-                    }
-                    else if (!row){
-                        return res.status(400).json({ error: 'No such book is available' });
-                    }
-                    else {
-                        db.run('DELETE FROM books WHERE id = ?', id, (err) => {
-                            if (err) {
-                                console.error(err);
-                                return res.status(500).json({ error: 'Error deleting book' });
-                            }
-                            res.json({ message: 'Book deleted successfully' });
-                        });
-                    }
-                });
-            } else if (id || (title && author)){
-                if (id){
-                    //Check if the book is present id
-                    db.get('SELECT * FROM books WHERE id = ?', [id], (err, row) => {
-                        if(err){
-                            console.error(err.message);
-                            return res.status(400).json({ error: 'Error validating the book' }); 
+            if (!id){
+               return res.status(400).json({ error: 'Book id is required' });
+            }
+            //Check if the book is present id
+            db.get('SELECT * FROM books WHERE id = ?', [id], (err, row) => {
+                if(err){
+                    console.error(err.message);
+                    return res.status(400).json({ error: 'Error validating the book' }); 
+                }else if (!row){
+                    return res.status(400).json({ error: 'No such book is available' });
+                }else {
+                    db.run('DELETE FROM books WHERE id = ?', id, (err) => {
+                        if (err) {
+                            console.error(err);
+                            return res.status(500).json({ error: 'Error deleting book' });
                         }
-                        else if (!row){
-                            return res.status(400).json({ error: 'No such book is available' });
-                        }
-                        else {
-                            db.run('DELETE FROM books WHERE id = ?', id, (err) => {
-                                if (err) {
-                                    console.error(err);
-                                    return res.status(500).json({ error: 'Error deleting book' });
-                                }
-                                return res.json({ message: 'Book deleted successfully' });
-                            });
-                        }
-                    });
-                } else {
-                    //Check if the book is present with title and author
-                    db.get('SELECT b.id FROM books b INNER JOIN authors a ON a.id = b.author_id WHERE b.title = ? AND a.name = ?', [title, author], (err, row) => {
-                        if(err){
-                            console.error(err.message);
-                            return res.status(400).json({ error: 'Error validating the book' }); 
-                        }
-                        else if (!row){
-                            return res.status(400).json({ error: 'No such book is available' });
-                        }
-                        else {
-                            const book_id = row.id;
-                            db.run('DELETE FROM books WHERE id = ?', book_id, (err) => {
-                                if (err) {
-                                    console.error(err);
-                                    return res.status(500).json({ error: 'Error deleting book' });
-                                }
-                                return res.json({ message: 'Book deleted successfully' });
-                            });
-                        }
+                        return res.json({ message: 'Book deleted successfully' });
                     });
                 }
-            } else {
-                return res.status(400).json({ error: 'Either id or title and author are required' });
-            }
+            });
             break;
         case 'UPDATE':
             if( !id ){
