@@ -39,6 +39,17 @@ async function createTable(tableName, sqlCreateStmt){
     })
 }
 
+async function getAutorIdByName(name){
+    return new Promise((resolve, reject) => {
+        db.get('SELECT id FROM authors WHERE name = ?', name, (err, rows) => {
+            if (err) {
+                console.error('Error on trying to retrive id from authors. ', err.message);
+                reject(err);
+            } 
+            resolve(rows?.id);
+        });
+    })
+}
 //Calling external Library & adding to the authors
 async function addAuthor(){
     try{
@@ -65,29 +76,25 @@ async function addBooks(){
     try{
         const books = await api.fetchFromAPI('https://freetestapi.com/api/v1/books');
         //Loop through the authors
-        books.forEach(book => {
+        books.forEach(async book => {
             const { title, author, publication_year, description } = book;
-
+            
             //Get the author_id from the authors table
-            db.get('SELECT id FROM authors WHERE name = ?', author, (err, row) => {
-                if (err) {
-                    console.error(err);
-                } else if (!row) {
-                    console.error('Author not found');
-                } else {
-                    const author_id = row.id;
-                    db.run('INSERT INTO books (title, author_id, publication_year, description) VALUES (?, ?, ?, ?)', [title, author_id, publication_year, description], (err) => {
-                        if (err) {
-                            console.error(err);
-                        } else {
-                            console.log('Book inserted successfully.');
-                        };
-                    });
-                }
-            });
+            const author_id = await getAutorIdByName(author);
+            if( !author_id ){
+                console.log('Author not found');
+            } else {
+                db.run('INSERT INTO books (title, author_id, publication_year, description) VALUES (?, ?, ?, ?)', [title, author_id, publication_year, description], (err) => {
+                    if (err) {
+                        console.log('Error on inserting into books. ', err);
+                    } else {
+                        console.log('Book inserted successfully.');
+                    };
+                });
+            };
         });
     } catch(error){
-        console.log( { error: error } );
+        console.log('Error on adding into books', error);
     }
 }
 
@@ -131,10 +138,12 @@ async function selectTable(tableName){
     });
 }
 
+
 dbSetUp();
 
 //Call in the functions to 
 module.exports = {
-    selectTable
+    selectTable,
+    getAutorIdByName
 }
 
