@@ -3,7 +3,7 @@ const router = express.Router();
 
 const db = require('../../data/db')
 
-router.post('/',  (req, res, next) => {
+router.post('/', async (req, res, next) => {
     const { operation, id, title, author, publication_year, description } = req.body;
     
     if( !operation ){
@@ -17,32 +17,27 @@ router.post('/',  (req, res, next) => {
             }
 
             //Get the author_id from the authors table
-            db.get('SELECT id FROM authors WHERE name = ?', author, (err, row) => {
-                if (err) {
-                    return res.status(400).json({ error: err });
-                } else if (!row) {
-                    return res.status(400).json({ error:'Author not found' });
-                } else {
-                    const author_id = row.id;
-                    db.get('SELECT id FROM books WHERE title = ? AND author_id = ?', [title, author_id], (err, row) => {
-                        if (err) {
-                            console.error(err.message);
-                            return res.status(400).json({ error: 'Error adding book' });
-                        } else if (!row) {
-                            db.run('INSERT INTO books (title, author_id, publication_year, description) VALUES (?, ?, ?, ?)', [title, author_id, publication_year, description], (err) => {
-                                if (err) {
-                                    return res.status(400).json({ error: err });
-                                } else {
-                                    return res.json({ message: 'Book inserted successfully.'});
-                                }
-                            });
-                        }else {
-                            return res.json({ message: 'Book added successfully' });
-                        }
-                    });        
-                }
-            });
-            
+            const author_id = await getAutorIdByName(author);
+            if( !author_id ){
+                return res.status(400).json({ error:'Author not found' });
+            } else{
+                db.get('SELECT id FROM books WHERE title = ? AND author_id = ?', [title, author_id], (err, row) => {
+                    if (err) {
+                        console.error(err.message);
+                        return res.status(400).json({ error: 'Error adding book' });
+                    } else if (!row) {
+                        db.run('INSERT INTO books (title, author_id, publication_year, description) VALUES (?, ?, ?, ?)', [title, author_id, publication_year, description], (err) => {
+                            if (err) {
+                                return res.status(400).json({ error: err });
+                            } else {
+                                return res.json({ message: 'Book inserted successfully.'});
+                            }
+                        });
+                    }else {
+                        return res.json({ message: 'Book added successfully' });
+                    }
+                });        
+            }            
             break;
         case 'DELETE':
             if (!id){
@@ -71,7 +66,7 @@ router.post('/',  (req, res, next) => {
                 return res.status(400).json({ error: 'Id needs to be specified to update a book!' });
             }
 
-            db.get('SELECT * FROM books WHERE id = ?', id, (err, row) => {
+            db.get('SELECT * FROM books WHERE id = ?', id, async (err, row) => {
                 if(err){
                     console.error(err.message);
                     return res.status(400).json({ error: 'Error validating the book' }); 
@@ -80,22 +75,18 @@ router.post('/',  (req, res, next) => {
                     return res.status(400).json({ error: 'No such book is available' });
                 }
                 else {
-                    db.get('SELECT id FROM authors WHERE name = ?', author, (err, row) => {
-                        if (err) {
-                            return res.status(400).json({ error: err });
-                        } else if (!row) {
-                            return res.status(400).json({ error:'Author not found' });
-                        } else {
-                            const author_id = row.id;
-                            db.run('UPDATE books SET title = ?, author_id = ?, publication_year = ?, description = ? WHERE id = ?', [title, author_id, publication_year, description, id], (err) => {
-                                if (err) {
-                                    console.error(err);
-                                    return res.status(500).json({ error: 'Error updating book' });
-                                }
-                                res.json({ message: 'Book updated successfully' });
-                            });
-                        }
-                    });
+                    const author_id = await getAutorIdByName(author);
+                    if( !author_id ){
+                        return res.status(400).json({ error:'Author not found' });
+                    } else {
+                        db.run('UPDATE books SET title = ?, author_id = ?, publication_year = ?, description = ? WHERE id = ?', [title, author_id, publication_year, description, id], (err) => {
+                            if (err) {
+                                console.error(err);
+                                return res.status(500).json({ error: 'Error updating book' });
+                            }
+                            res.json({ message: 'Book updated successfully' });
+                        });
+                    }
                 }
             });
             break;
