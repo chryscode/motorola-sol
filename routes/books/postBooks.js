@@ -80,12 +80,21 @@ router.post('/',  (req, res, next) => {
                     return res.status(400).json({ error: 'No such book is available' });
                 }
                 else {
-                    db.run('UPDATE books SET title = ?, author = ?, first_publish_year = ? WHERE id = ?', [title, author, first_publish_year, id], (err) => {
+                    db.get('SELECT id FROM authors WHERE name = ?', author, (err, row) => {
                         if (err) {
-                            console.error(err);
-                            return res.status(500).json({ error: 'Error updating book' });
+                            return res.status(400).json({ error: err });
+                        } else if (!row) {
+                            return res.status(400).json({ error:'Author not found' });
+                        } else {
+                            const author_id = row.id;
+                            db.run('UPDATE books SET title = ?, author_id = ?, publication_year = ?, description = ? WHERE id = ?', [title, author_id, publication_year, description, id], (err) => {
+                                if (err) {
+                                    console.error(err);
+                                    return res.status(500).json({ error: 'Error updating book' });
+                                }
+                                res.json({ message: 'Book updated successfully' });
+                            });
                         }
-                        res.json({ message: 'Book updated successfully' });
                     });
                 }
             });
