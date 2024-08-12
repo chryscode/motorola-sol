@@ -47,7 +47,7 @@ router.post('/',  (req, res, next) => {
         case 'DELETE':
             if (id && title && author){
                 //Check if the book is present with all the parameters
-                db.get('SELECT * FROM books WHERE id = ? AND title = ? AND author = ?', [id, title, author], (err, row) => {
+                db.get('SELECT * FROM books b INNER JOIN authors a ON b.author_id = a.id WHERE b.id = ? AND b.title = ? AND a.name = ?', [id, title, author], (err, row) => {
                     if(err){
                         console.error(err.message);
                         return res.status(400).json({ error: 'Error validating the book' }); 
@@ -82,13 +82,13 @@ router.post('/',  (req, res, next) => {
                                     console.error(err);
                                     return res.status(500).json({ error: 'Error deleting book' });
                                 }
-                                res.json({ message: 'Book deleted successfully' });
+                                return res.json({ message: 'Book deleted successfully' });
                             });
                         }
                     });
                 } else {
                     //Check if the book is present with title and author
-                    db.get('SELECT * FROM books WHERE title = ? AND author = ?', [title, author], (err, row) => {
+                    db.get('SELECT b.id FROM books b INNER JOIN authors a ON a.id = b.author_id WHERE b.title = ? AND a.name = ?', [title, author], (err, row) => {
                         if(err){
                             console.error(err.message);
                             return res.status(400).json({ error: 'Error validating the book' }); 
@@ -97,12 +97,13 @@ router.post('/',  (req, res, next) => {
                             return res.status(400).json({ error: 'No such book is available' });
                         }
                         else {
-                            db.run('DELETE FROM books WHERE title = ? AND author = ?', [title, author], (err) => {
+                            const book_id = row.id;
+                            db.run('DELETE FROM books WHERE id = ?', book_id, (err) => {
                                 if (err) {
                                     console.error(err);
                                     return res.status(500).json({ error: 'Error deleting book' });
                                 }
-                                res.json({ message: 'Book deleted successfully' });
+                                return res.json({ message: 'Book deleted successfully' });
                             });
                         }
                     });
