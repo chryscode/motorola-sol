@@ -118,8 +118,23 @@ async function dbSetUp(){
     }
 }
 
+async function selectTable(tableName){
+    return new Promise((resolve, reject) => {
+        const selectQuery = `SELECT * FROM ${tableName}`;
+        db.all(selectQuery, (err, rows) => {
+            if (err) {
+                console.log('Error on SELECT. ', err.message);
+                reject(err);
+            }
+            resolve(rows);
+        });
+    });
+}
+
 dbSetUp();
 
 //Call in the functions to 
-module.exports = db
+module.exports = {
+    selectTable
+}
 
