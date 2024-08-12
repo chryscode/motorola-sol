@@ -8,39 +8,7 @@ const db = new sqlite3.Database('./books-catalogue.db', (err) => {
     console.log('Connected to the database.');
 });
 
-//Create the books table and populate this from an external api
-db.get('SELECT name FROM sqlite_master WHERE type = "table" AND name = "books"', (err, row) => {
-    if (err) {
-        console.error(err);
-    } else if (row) {
-        console.log('Books table already exists.');
-    } else {
-        console.log('Creating books table...');
-        db.run(`
-            CREATE TABLE books (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                author TEXT NOT NULL,
-                first_publish_year INTEGER
-            )` , (err) => {
-            if (err) {
-                console.error(err);
-            } else {
-                console.log('Books table created successfully.');
-                
-                //Add Books
-                addBooks('Dracula');
-                addBooks('Pride And Prejudice');
-                addBooks('Sense And Sensibility');
-                addBooks('Harry Potter');
-
-
-            }
-        });
-    }
-});
-
-//Create the authors table and populate this from an external api
+//Create the authors table
 db.get('SELECT name FROM sqlite_master WHERE type = "table" AND name = "authors"', (err, row) => {
     if (err) {
         console.error(err);
@@ -52,30 +20,52 @@ db.get('SELECT name FROM sqlite_master WHERE type = "table" AND name = "authors"
             CREATE TABLE authors (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
-                birth_date TEXT,
-                top_work TEXT
+                birth_year INTEGER,
+                biography TEXT
             )` , (err) => {
             if (err) {
                 console.error(err);
             } else {
                 console.log('Authors table created successfully.');
                 
-                //Add Authors
-                addAuthor('J. K. Rowling');
-                addAuthor('George Orwell');
-                addAuthor('Stephen King');
-                addAuthor('Edgar Allan Poe');
-                addAuthor('C.S.Lewis');
-                addAuthor('Jane Austen');
-                addAuthor('Bram Stocker');
+                //Call the External API and add in data
+                addAuthor();
+            }
+        });
+    }
+});
+
+//Create the books table
+db.get('SELECT name FROM sqlite_master WHERE type = "table" AND name = "books"', (err, row) => {
+    if (err) {
+        console.error(err);
+    } else if (row) {
+        console.log('Books table already exists.');
+    } else {
+        console.log('Creating books table...');
+        db.run(`
+            CREATE TABLE books (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                author_id INTEGER NOT NULL,
+                publication_year INTEGER,
+                description TEXT
+            )` , (err) => {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log('Books table created successfully.');
+                
+                //Call the External API and add in data
+                addBooks();             
             }
         });
     }
 });
 
 //Calling external Library & adding to the authors
-function addAuthor(authorName){
-    const url = `https://openlibrary.org/search/authors.json?q=${authorName}`;
+function addAuthor(){
+    const url = 'https://freetestapi.com/api/v1/authors'; 
 
     https.get(url, (res) => {
         let data = '';
@@ -86,29 +76,31 @@ function addAuthor(authorName){
 
         res.on('end', () => {
             try{
-                const response = JSON.parse(data);
-
-                const { name, birth_date, top_work } = response.docs[0];
-                db.run('INSERT INTO authors (name, birth_date, top_work) VALUES (?, ?, ?)', [name, birth_date, top_work], (err) => {
-                    if (err) {
-                      console.error(err);
-                    } else {
-                      console.log('Author inserted successfully.');
-                    }
-                  });
-
-            } catch(error){
+                const authors = JSON.parse(data);
+                
+                //Loop through the authors
+                authors.forEach(author => {
+                    const { name, birth_year, biography } = author;
+                    db.run('INSERT INTO authors (name, birth_year, biography) VALUES (?, ?, ?)', [name, birth_year, biography], (err) => {
+                        if (err) {
+                            console.error(err);
+                        } else {
+                            console.log('Author inserted successfully.');
+                        }
+                    });
+                });
+            }catch(error){
                 console.log( { error: error } );
-            }
-        })
+            }                   
+        });
     }).on('error', (error) => {
         console.log({error: error});
     })
 }
 
 //Calling external Library & adding to the books
-function addBooks(bookName){
-    const url = `https://openlibrary.org/search.json?q=${bookName}`;
+function addBooks(){
+    const url = 'https://freetestapi.com/api/v1/books';
 
     https.get(url, (res) => {
         let data = '';
@@ -119,17 +111,30 @@ function addBooks(bookName){
 
         res.on('end', () => {
             try{
-                const response = JSON.parse(data);
+                const books = JSON.parse(data);
+                
+                //Loop through the authors
+                books.forEach(book => {
+                    const { title, author, publication_year, description } = book;
 
-                const { title, author_name, first_publish_year } = response.docs[0];
-                db.run('INSERT INTO books (title, author, first_publish_year) VALUES (?, ?, ?)', [title, author_name[0], first_publish_year], (err) => {
-                    if (err) {
-                      console.error(err);
-                    } else {
-                      console.log('Book inserted successfully.');
-                    }
-                  });
-
+                    //Get the author_id from the authors table
+                    db.get('SELECT id FROM authors WHERE name = ?', author, (err, row) => {
+                        if (err) {
+                            console.error(err);
+                        } else if (!row) {
+                            console.error('Author not found');
+                        } else {
+                            const author_id = row.id;
+                            db.run('INSERT INTO books (title, author_id, publication_year, description) VALUES (?, ?, ?, ?)', [title, author_id, publication_year, description], (err) => {
+                                if (err) {
+                                    console.error(err);
+                                } else {
+                                    console.log('Book inserted successfully.');
+                                }
+                            });
+                        }
+                    });
+                });
             } catch(error){
                 console.log( { error: error } );
             }
