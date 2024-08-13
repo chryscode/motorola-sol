@@ -233,7 +233,7 @@ async function dbSetUp(){
 
 async function selectAuthors(){
     return new Promise((resolve, reject) => {
-        const selectQuery = `SELECT * FROM authors`;
+        let selectQuery = `SELECT * FROM authors`;
         db.all(selectQuery, (err, rows) => {
             if (err) {
                 console.log('Error on SELECT. ', err.message);

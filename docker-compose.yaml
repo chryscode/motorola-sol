@@ -1,0 +1,4 @@
+services:
+  node-application:
+    build: .
+    container_name: node-application
