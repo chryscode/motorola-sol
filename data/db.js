@@ -85,6 +85,96 @@ async function insertAuthor(authorData) {
     }
 }
 
+//delete author
+async function deleteAuthor(id){
+    try{
+       // Check if the author exists
+        const author = db.get('SELECT * FROM authors WHERE id = ?', [id]);
+        if (!author) {
+            return 'No author found with the provided ID.';
+        }
+
+        // Delete the author
+        db.run('DELETE FROM authors WHERE id = ?', [id]);
+        console.log(`Author (ID: ${id}) deleted successfully.`);
+
+        // Delete associated books
+        db.run('DELETE FROM books WHERE author_id = ?', [id]);
+        console.log('Associated books deleted successfully.');
+
+        const message = `Author (ID: ${id}) and associated books deleted successfully.`
+        return message;
+    } catch(error){
+        console.error('Error deleting  author:', error.message);
+        throw error;
+    }
+}
+
+//delete author
+async function deleteBook(id){
+    try{
+       // Check if the book exists
+        const book = db.get('SELECT * FROM books WHERE id = ?', [id]);
+        if (!book || book == undefined) {
+            return 'No book found with the provided ID.';
+        }
+
+        // Delete associated books
+        db.run('DELETE FROM books WHERE id = ?', [id]);        
+        const message = `Book (ID: ${id}) deleted successfully.`;
+
+        return message;
+    } catch(error){
+        console.error('Error deleting book:', error.message);
+        throw error;
+    }
+}
+
+//Update books
+async function updateBook(bookData){
+    const { id, title, author, publication_year, description } = bookData;
+    try{
+        //check if the book exists
+        const existingBook = db.get('SELECT * FROM books WHERE id = ?', [id]);
+        if (!existingBook) {
+            return 'No book found with the provided ID.';
+        }
+
+        //Get Author Id
+        const author_id = await getAutorIdByName(author);
+
+        //update the books
+        db.run('UPDATE books SET title = ?, author_id = ?, publication_year = ?, description = ? WHERE id = ?', [title, author_id, publication_year, description, id]);
+        const message = `Book (ID: ${id}) updated successfully.`;
+
+        return message;
+    } catch(error){
+        console.error('Error updating book:', error.message);
+        throw error;
+    }           
+}
+
+//Update author
+async function updateAuthor(authorData){
+    const { id, name, birth_year, biography } = authorData;
+    try{
+        //check if the book exists
+        const existingAuthor = db.get('SELECT * FROM authors WHERE id = ?', [id]);
+        if (!existingAuthor) {
+            return 'No author found with the provided ID.';
+        }
+
+        //update the books
+        db.run('UPDATE authors SET name = ?, birth_year = ?, biography = ? WHERE id = ?', [name, birth_year, biography, id]);
+        const message = `Author (ID: ${id}) updated successfully.`;
+
+        return message;
+    } catch(error){
+        console.error('Error updating author:', error.message);
+        throw error;
+    }           
+}
+
 //Calling external Library & adding to the authors
 async function addAuthor(){
     try{
@@ -162,6 +252,10 @@ module.exports = {
     selectTable,
     getAutorIdByName,
     insertBook,
-    insertAuthor
+    insertAuthor,
+    deleteAuthor,
+    deleteBook,
+    updateBook,
+    updateAuthor
 }
 
