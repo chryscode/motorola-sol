@@ -46,10 +46,31 @@ async function getAutorIdByName(name){
                 console.error('Error on trying to retrive id from authors. ', err.message);
                 reject(err);
             } 
-            resolve(rows?.id);
+            if(rows) resolve(rows.id);
+            resolve();
         });
     })
 }
+// Insert book data
+async function insertBook(bookData) {
+    const { title, author, publication_year, description } = bookData;
+    
+    //Check if author exists
+    const author_id = await getAutorIdByName(author);
+    if (!author_id || author_id == undefined) {
+        return(`Author ${author} not found.`);
+    }
+
+    const sql = 'INSERT INTO books (title, author_id, publication_year, description) VALUES (?, ?, ?, ?)';
+    try {
+      db.run(sql, [title, author_id, publication_year, description]);
+      return(`Book ${title} inserted successfully.`);
+    } catch (error) {
+      console.error('Error inserting book:', error.message);
+      throw error; // Re-throw for potential handling at call site
+    }
+}
+
 //Calling external Library & adding to the authors
 async function addAuthor(){
     try{
@@ -76,22 +97,9 @@ async function addBooks(){
     try{
         const books = await api.fetchFromAPI('https://freetestapi.com/api/v1/books');
         //Loop through the authors
-        books.forEach(async book => {
-            const { title, author, publication_year, description } = book;
-            
-            //Get the author_id from the authors table
-            const author_id = await getAutorIdByName(author);
-            if( !author_id ){
-                console.log('Author not found');
-            } else {
-                db.run('INSERT INTO books (title, author_id, publication_year, description) VALUES (?, ?, ?, ?)', [title, author_id, publication_year, description], (err) => {
-                    if (err) {
-                        console.log('Error on inserting into books. ', err);
-                    } else {
-                        console.log('Book inserted successfully.');
-                    };
-                });
-            };
+        books.forEach(async book => {                        
+            const message = await insertBook(book);
+            console.log(message);
         });
     } catch(error){
         console.log('Error on adding into books', error);
@@ -144,6 +152,7 @@ dbSetUp();
 //Call in the functions to 
 module.exports = {
     selectTable,
-    getAutorIdByName
+    getAutorIdByName,
+    insertBook
 }
 

@@ -16,28 +16,9 @@ router.post('/', async (req, res, next) => {
                 return res.status(400).json({ error: 'Title and author are required' });
             }
 
-            //Get the author_id from the authors table
-            const author_id = await getAutorIdByName(author);
-            if( !author_id ){
-                return res.status(400).json({ error:'Author not found' });
-            } else{
-                db.get('SELECT id FROM books WHERE title = ? AND author_id = ?', [title, author_id], (err, row) => {
-                    if (err) {
-                        console.error(err.message);
-                        return res.status(400).json({ error: 'Error adding book' });
-                    } else if (!row) {
-                        db.run('INSERT INTO books (title, author_id, publication_year, description) VALUES (?, ?, ?, ?)', [title, author_id, publication_year, description], (err) => {
-                            if (err) {
-                                return res.status(400).json({ error: err });
-                            } else {
-                                return res.json({ message: 'Book inserted successfully.'});
-                            }
-                        });
-                    }else {
-                        return res.json({ message: 'Book added successfully' });
-                    }
-                });        
-            }            
+            const message = await db.insertBook({ title, author, publication_year, description } );
+            res.json(message);
+
             break;
         case 'DELETE':
             if (!id){
