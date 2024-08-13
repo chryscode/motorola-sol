@@ -5,7 +5,7 @@ const db = require('../../data/db')
 
 router.get('/',  async (req, res, next) => {
     try{
-        const dataObject = await db.selectTable('authors');
+        const dataObject = await db.selectAuthors();
         res.json(dataObject);
     }catch(error){
         return res.status(500).json({ error: error.message });

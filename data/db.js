@@ -231,9 +231,22 @@ async function dbSetUp(){
     }
 }
 
-async function selectTable(tableName){
+async function selectAuthors(){
     return new Promise((resolve, reject) => {
-        const selectQuery = `SELECT * FROM ${tableName}`;
+        const selectQuery = `SELECT * FROM authors`;
+        db.all(selectQuery, (err, rows) => {
+            if (err) {
+                console.log('Error on SELECT. ', err.message);
+                reject(err);
+            }
+            resolve(rows);
+        });
+    });
+}
+
+async function selectBooks(){
+    return new Promise((resolve, reject) => {
+        const selectQuery = `SELECT b.id, b.title, b.publication_year, b.description, a.name, a.birth_year, a.biography FROM books b inner join authors a on b.author_id = a.id`;
         db.all(selectQuery, (err, rows) => {
             if (err) {
                 console.log('Error on SELECT. ', err.message);
@@ -249,7 +262,8 @@ dbSetUp();
 
 //Call in the functions to 
 module.exports = {
-    selectTable,
+    selectAuthors,
+    selectBooks,
     getAutorIdByName,
     insertBook,
     insertAuthor,
