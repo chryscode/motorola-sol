@@ -71,21 +71,29 @@ async function insertBook(bookData) {
     }
 }
 
+async function insertAuthor(authorData) {
+    
+    const { name, birth_year, biography } = authorData;
+
+    const sql = 'INSERT INTO authors (name, birth_year, biography) VALUES (?, ?, ?)';
+    try {
+      db.run(sql, [name, birth_year, biography]);
+      return(`Author ${name} inserted successfully.`);
+    } catch (error) {
+      console.error('Error inserting author:', error.message);
+      throw error;
+    }
+}
+
 //Calling external Library & adding to the authors
 async function addAuthor(){
     try{
         const authors = await api.fetchFromAPI('https://freetestapi.com/api/v1/authors');
 
         //Loop through the authors
-        authors.forEach(author => {
-            const { name, birth_year, biography } = author;
-            db.run('INSERT INTO authors (name, birth_year, biography) VALUES (?, ?, ?)', [name, birth_year, biography], (err) => {
-                if (err) {
-                    console.error(err);
-                } else {
-                    console.log('Author inserted successfully.');
-                }
-            });
+        authors.forEach(async(author) => {
+            const message = await insertAuthor(author);
+            console.log(message);
         });
     } catch (error) {
         console.log('Error on populating the authors table. ', error);
@@ -153,6 +161,7 @@ dbSetUp();
 module.exports = {
     selectTable,
     getAutorIdByName,
-    insertBook
+    insertBook,
+    insertAuthor
 }
 

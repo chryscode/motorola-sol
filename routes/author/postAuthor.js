@@ -3,7 +3,7 @@ const router = express.Router();
 
 const db = require('../../data/db')
 
-router.post('/',  (req, res, next) => {
+router.post('/', async (req, res, next) => {
     const { operation, id, name,  birth_year, biography } = req.body;
     
     if( !operation ){
@@ -15,23 +15,8 @@ router.post('/',  (req, res, next) => {
             if (!name) {
                 return res.status(400).json({ error: 'Author name is required' });
             }
-            db.get('SELECT id FROM authors WHERE name = ?', name, (err, row) => {
-                if (err) {
-                    console.error(err.message);
-                    return res.status(400).json({ error: 'Error adding author' });
-                } else if (!row) {
-                    db.run('INSERT INTO authors (name, birth_year, biography) VALUES (?, ?, ?)', [name, birth_year, biography], (err) => {
-                        if (err) {
-                            console.error(err.message);
-                            return res.status(500).json({ error: 'Error adding author' });
-                        } else {
-                            res.json({ message: 'Author inserted successfully'});
-                        }
-                    });
-                } else {
-                    res.json({ message: 'Author added successfully' });
-                }
-            });
+            const message = await db.insertAuthor( { name, birth_year, biography } );
+            res.json(message);
             break;
         case 'DELETE':
             if(!id) {
