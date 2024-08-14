@@ -232,16 +232,27 @@ async function dbSetUp(){
 }
 
 async function selectAuthors(){
-    return new Promise((resolve, reject) => {
-        let selectQuery = `SELECT * FROM authors`;
-        db.all(selectQuery, (err, rows) => {
-            if (err) {
-                console.log('Error on SELECT. ', err.message);
-                reject(err);
-            }
-            resolve(rows);
-        });
-    });
+    try {
+        const [authors, books] = await Promise.all([
+          new Promise((resolve, reject) => {
+            db.all('SELECT * FROM authors', (err, rows) => {
+              if (err) reject(err);
+              else resolve(rows);
+            });
+          }),
+          new Promise((resolve, reject) => {
+            db.all('SELECT * FROM books', (err, rows) => {
+              if (err) reject(err);
+              else resolve(rows);
+            });
+          })
+        ]);
+    
+        return { authors, books };
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        throw error;
+      }
 }
 
 async function selectBooks(){
