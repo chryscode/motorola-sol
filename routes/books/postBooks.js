@@ -5,41 +5,41 @@ const db = require('../../data/db')
 
 router.post('/', async (req, res, next) => {
     const { operation, id, title, author, publication_year, description } = req.body;
-    
-    if( !operation ){
+
+    if (!operation) {
         return res.status(400).json({ error: 'Need to specify operation INSERT/UPDATE/DELETE' });
     }
 
-    let message;
-    switch(operation) {
-        case 'INSERT':
-            if (!title || !author) {
-                return res.status(400).json({ error: 'Title and author are required' });
-            }
+    try {
+        switch (operation) {
+            case 'INSERT':
+                if (!title || !author) {
+                    return res.status(400).json({ error: 'Title and author are required' });
+                }
 
-            message = await db.insertBook({ title, author, publication_year, description } );
-            res.json(message);
+                res.json(await db.insertBook({ title, author, publication_year, description }));
 
-            break;
-        case 'DELETE':
-            if (!id){
-               return res.status(400).json({ error: 'Book id is required' });
-            }
-            
-            message = await db.deleteBook(id);
-            res.json(message);
+                break;
+            case 'DELETE':
+                if (!id) {
+                    return res.status(400).json({ error: 'Book id is required' });
+                }
 
-            break;
-        case 'UPDATE':
-            if( !id ){
-                return res.status(400).json({ error: 'Id needs to be specified to update a book!' });
-            }
+                res.json(await db.deleteBook(id));
 
-            const message = await db.updateBook({ id, title, author, publication_year, description });
-            res.json(message);
-            break;
-        default:
-            return res.status(400).json({ error: 'Incorrect operation specified' });
+                break;
+            case 'UPDATE':
+                if (!id) {
+                    return res.status(400).json({ error: 'Id needs to be specified to update a book!' });
+                }
+                res.json(await db.updateBook({ id, title, author, publication_year, description }));
+                break;
+            default:
+                return res.status(400).json({ error: 'Incorrect operation specified' });
+        }
+    } catch (error) {
+        console.error('Error processing book request:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 })
 
